@@ -23,6 +23,8 @@
 </template>
 
 <script>
+import 'whatwg-fetch';
+
 export default {
   name: 'FormCompo',
   data() {
