@@ -1,17 +1,19 @@
 <template lang="pug">
   .form-wrapper
-    form(ref='form')
-      label ФИО
-        input(type='text', v-model='fields.fio.content')
-      label E-mail
-        input(type='email', v-model='fields.email.content')
-      label Телефон
-        input(type='text', v-model='fields.phone.content')
-      label Комментарий
+    form(v-if="!isDataSent")
+      label {{ fields.fio.name }}*
+        input(type='text', v-model='fields.fio.content', :class="[{'invalid': isErrorInSendingData && !fields.fio.isValid}]")
+      label {{ fields.email.name }}*
+        input(type='email', v-model='fields.email.content', :class="[{'invalid': isErrorInSendingData && !fields.email.isValid}]")
+      label {{ fields.phone.name }}*
+        input(type='text', v-model='fields.phone.content', :class="[{'invalid': isErrorInSendingData && !fields.phone.isValid}]")
+      label {{ fields.comment.name }}
         textarea(v-model='fields.comment.content')
-      label Согласие на обработку персональных данных
-        input(type='checkbox', v-model='fields.isConsentGiven.content')
+      label {{ fields.isConsentGiven.name }}*
+        input(type='checkbox', v-model='fields.isConsentGiven.content', :class="[{'invalid': isErrorInSendingData && !fields.isConsentGiven.isValid}]")
+      div * - обязательны для заполнения
       button(@click.prevent="sendForm") Отправить
+    div(v-else) Данные успешно отправлены!
 </template>
 
 <script>
@@ -21,48 +23,41 @@ export default {
     return {
       fields: {
         fio: {
+          name: 'ФИО',
           content: '',
-          // isValid: !!this.content.length,
+          isValid: false,
           isRequired: true
         },
         email: {
+          name: 'E-mail',
           content: '',
-          // isValid: !!fields.email.content.length,
+          isValid: false,
           isRequired: true
         },
         phone: {
+          name: 'Телефон',
           content: '',
-          // isValid: !!fields.phone.content.length,
+          isValid: false,
           isRequired: true
         },
         isConsentGiven: {
+          name: 'Согласие на обработку персональных данных',
           content: false,
-          // isValid: !!fields.fio.content,
+          isValid: false,
           isRequired: true
         },
         comment: {
+          name: 'Комментарий',
           content: ''
         }
-      }
+      },
+      isErrorInSendingData: false,
+      isDataSent: false
     };
   },
   computed: {
-    fieldsKeys() {
-      return Object.keys(this.fieldsState);
-    },
-    fieldsState() {
-      return Object.keys(this.fields).reduce((acc, key) => {
-        acc[key] = this.fields[key];
-        if (key === 'comment') {
-          return acc;
-        }
-        // console.log('acc', acc);
-        acc[key].isValid = this.checkValid(key);
-        return acc;
-      }, {});
-    },
     requiredFields() {
-      return this.fieldsKeys.reduce((acc, key) => {
+      return Object.keys(this.fields).reduce((acc, key) => {
         if (this.fields[key].hasOwnProperty('isRequired')) {
           acc[key] = this.fields[key];
         }
@@ -70,61 +65,63 @@ export default {
       }, {});
     },
     fieldsWithErrors() {
-      return Object.keys(this.requiredFields).filter((key) => !this.fieldsState[key].isValid);
+      return Object.keys(this.requiredFields).filter((key) => !this.requiredFields[key].isValid);
     }
   },
-  mounted() {
-    // this.$refs.form.addEventListener('submit', this.sendForm);
-    // console.log(this.fields);
-  },
+  mounted() {},
   methods: {
-    checkValid(key) {
-      if (key === 'isConsentGiven') {
-        return this.fields.isConsentGiven.content;
+    checkData() {
+      if (this.fieldsWithErrors.length) {
+        this.isErrorInSendingData = true;
+      } else {
+        this.isErrorInSendingData = false;
       }
-      return !!this.fields[key].content.length;
+    },
+    generateErrorText() {
+      let errorFields = '';
+      let consent = '';
+      let msg = '';
+      this.fieldsWithErrors.forEach((field) => {
+        if (field !== 'isConsentGiven') {
+          errorFields = errorFields.length
+            ? `${errorFields}, ${this.fields[field].name}`
+            : `${this.fields[field].name}`;
+        } else {
+          consent = 'Для отправки данных необходимо дать согласие на их обработку';
+        }
+      });
+      if (errorFields.length) {
+        msg = `Заполните обязательные поля: ${errorFields}`;
+        if (consent.length) {
+          msg = `${msg}\n${consent}`;
+        }
+      } else {
+        msg = consent;
+      }
+      return msg;
     },
     sendForm() {
-      // e.preventDefault();
-      console.log('errors', this.fieldsWithErrors);
-      // alert(this.errors);
+      this.checkData();
+      if (this.isErrorInSendingData) {
+        const message = this.generateErrorText();
+        alert(message);
+      } else {
+        this.isDataSent = true;
+      }
     }
   },
-  beforeDestroy() {
-    // this.$refs.form.removeEventListener('submit', this.sendForm);
-  },
   watch: {
-    'required.fio'() {
-      if (this.required.fio.length) {
-        if (this.errors.includes('fio')) {
-          delete this.errors['fio'];
-          console.warn(this.errors);
-        }
-      }
+    'fields.fio.content'() {
+      this.fields.fio.isValid = !!this.fields.fio.content.length;
     },
-    'required.email'() {
-      if (this.required.email.length) {
-        if (this.errors.includes('email')) {
-          delete this.errors['email'];
-          console.warn(this.errors);
-        }
-      }
+    'fields.email.content'() {
+      this.fields.email.isValid = !!this.fields.email.content.length;
     },
-    'required.phone'() {
-      if (this.required.phone.length) {
-        if (this.errors.includes('phone')) {
-          delete this.errors['phone'];
-          console.warn(this.errors);
-        }
-      }
+    'fields.phone.content'() {
+      this.fields.phone.isValid = !!this.fields.phone.content.length;
     },
-    'required.isConsentGiven'() {
-      if (this.required.isConsentGiven.length) {
-        if (this.errors.includes('isConsentGiven')) {
-          delete this.errors['isConsentGiven'];
-          console.warn(this.errors);
-        }
-      }
+    'fields.isConsentGiven.content'() {
+      this.fields.isConsentGiven.isValid = !!this.fields.isConsentGiven.content;
     }
   }
 }
@@ -135,6 +132,10 @@ export default {
   display: flex;
   label {
     display: block;
+  }
+
+  .invalid {
+    border-color: red;
   }
 }
 </style>
