@@ -1,24 +1,14 @@
-# consent_form
+# Consent Form
 
-## Project setup
-```
+> Проект на Vue.js
+
+## Форма для отправки данных
+
+``` bash
+# установка
 npm install
-```
 
-### Compiles and hot-reloads for development
-```
+# запуск и hot reload (localhost:8080)
 npm run serve
-```
 
-### Compiles and minifies for production
 ```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
